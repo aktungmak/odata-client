@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	EP_TOKENSERVICE = "/rest/v0/TokenService/Actions/TokenService.Token"
-    EP_ALARMCOLLECTION = "/rest/v0/AlarmServices/AlarmListService/AlarmEntryCollection"
-	TRUST_BAD_CERT  = true
+	EP_TOKENSERVICE     = "/rest/v0/TokenService/Actions/TokenService.Token"
+	EP_ALARMCOLLECTION  = "/rest/v0/AlarmServices/AlarmListService/AlarmEntryCollection"
+	EP_SYSTEMCOLLECTION = "/rest/v0/Systems"
+	TRUST_BAD_CERT      = true
 )
 
 // a basic client for API interactions. handles token management
@@ -48,8 +49,9 @@ func (c *Client) Get(ep string) ([]byte, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-        // TODO check if token is stale and retry
-		return nil, err
+		// TODO check if token is stale and retry
+		print("token is stale")
+		return []byte{}, err
 	}
 	defer res.Body.Close()
 	data, err := ioutil.ReadAll(res.Body)
@@ -59,14 +61,35 @@ func (c *Client) Get(ep string) ([]byte, error) {
 
 // convenience method to grab the current alarms
 func (c *Client) GetAlarms() (*AlarmCollection, error) {
-    data, err := c.Get(EP_ALARMCOLLECTION)
-    if err != nil {
-        return nil, err
-    }
-    return NewAlarmCollection(data)
+	data, err := c.Get(EP_ALARMCOLLECTION)
+	if err != nil {
+		return nil, err
+	}
+	return NewAlarmCollection(data)
 }
 
-// get a bearer token for the specified user:pass combo
+// convenience method to grab all systems
+func (c *Client) GetSystems() (*SystemCollection, error) {
+	data, err := c.Get(EP_SYSTEMCOLLECTION)
+	if err != nil {
+		return nil, err
+	}
+	sc, err := NewSystemCollection(data)
+
+	// need to actually populate the Members field
+	for _, mem := range sc.Links.Members {
+		data, err := c.Get(mem.Id)
+		s, err := NewSystem(data)
+		if err != nil {
+			continue
+		} else {
+			sc.Members = append(sc.Members, *s)
+		}
+	}
+	return sc, err
+}
+
+// get a bearer token for the specified user:pass
 func GetToken(host, uname, pass string) (string, error) {
 	tr := &http.Transport{}
 	if TRUST_BAD_CERT {
