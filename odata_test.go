@@ -1,6 +1,7 @@
 package ccm
 
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -125,6 +126,84 @@ var SampleSystem = `{
   }
 }`
 
+var sampleLinks = `
+{
+    "Managers" : {
+      "@odata.id" : "/rest/v0/Managers"
+    },
+    "wrong": 2,
+    "Oem" : {
+      "Ericsson" : {
+        "AlarmServices" : {
+          "@odata.id" : "/rest/v0/AlarmServices"
+        },
+        "BootService" : {
+          "@odata.id" : "/rest/v0/BootService"
+        },
+        "Cables" : {
+          "@odata.id" : "/rest/v0/Cables"
+        },
+        "CredentialService" : {
+          "@odata.id" : "/rest/v0/CredentialService"
+        },
+        "DcCustomerService" : {
+          "@odata.id" : "/rest/v0/DcCustomerService"
+        },
+        "DiscoveryService" : {
+          "@odata.id" : "/rest/v0/DiscoveryService"
+        },
+        "Fabrics" : {
+          "@odata.id" : "/rest/v0/Fabrics"
+        },
+        "FwUpdateService" : {
+          "@odata.id" : "/rest/v0/FwUpdateService"
+        },
+        "HealthCheckService" : {
+          "@odata.id" : "/rest/v0/HealthCheckService"
+        },
+        "InventoryService" : {
+          "@odata.id" : "/rest/v0/InventoryService"
+        },
+        "MonitoringService" : {
+          "@odata.id" : "/rest/v0/MonitoringService"
+        },
+        "Networks" : {
+          "@odata.id" : "/rest/v0/Networks"
+        },
+        "NotificationService" : {
+          "@odata.id" : "/rest/v0/NotificationService"
+        },
+        "PhysicalSwitches" : {
+          "@odata.id" : "/rest/v0/PhysicalSwitches"
+        },
+        "SearchService" : {
+          "@odata.id" : "/rest/v0/SearchService"
+        },
+        "VPodAdminService" : {
+          "@odata.id" : "/rest/v0/VPodAdminService"
+        },
+        "TokenService" : {
+          "@odata.id" : "/rest/v0/TokenService"
+        },
+        "AccountService" : {
+          "@odata.id" : "/rest/v0/AccountService"
+        },
+        "LicenseService" : {
+          "@odata.id" : "/rest/v0/LicenseService"
+        },
+        "SessionService" : {
+          "@odata.id" : "/rest/v0/SessionService"
+        }
+      }
+    },
+    "Systems" : {
+      "@odata.id" : "/rest/v0/Systems"
+    },
+    "Tasks" : {
+      "@odata.id" : "/rest/v0/TaskService"
+    }
+}`
+
 func TestAlarmCollection(t *testing.T) {
 	ac, err := NewAlarmCollection([]byte(sampleAlarm))
 	if err != nil {
@@ -178,5 +257,24 @@ func TestSystem(t *testing.T) {
 		//s.ProcessorModel != "Core i5" ||
 		//s.TotalSystemMemory != 16 {
 		t.Error("Values of System incorrect")
+	}
+}
+
+func TestParseLinks(t *testing.T) {
+	var dat map[string]interface{}
+	err := json.Unmarshal([]byte(sampleLinks), &dat)
+	if err != nil {
+		t.Error("error parsing sample JSON: ", err)
+	}
+	res := ParseLinks(dat, "")
+
+	if len(res) != 23 {
+		t.Error("incorrect number of links found")
+
+		if res[".Managers"] != "/rest/v0/Managers" ||
+			res[".Oem.Ericsson.Cables"] != "/rest/v0/Cables" ||
+			res[".Tasks"] != "/rest/v0/TaskService" {
+			t.Error("values of links incorrect")
+		}
 	}
 }

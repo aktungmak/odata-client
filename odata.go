@@ -63,3 +63,25 @@ func NewSystem(data []byte) (*System, error) {
 	err := json.Unmarshal(data, s)
 	return s, err
 }
+
+// given a map of the links section, recursively extract
+// each layer and return a map of the name and the link
+func ParseLinks(data map[string]interface{}, pname string) map[string]string {
+	ret := make(map[string]string)
+	for k, v := range data {
+		switch w := v.(type) {
+		case string:
+			if k == "@odata.id" {
+				ret[pname] = w
+			}
+		case map[string]interface{}:
+			child := ParseLinks(w, pname+"."+k)
+			for k2, v2 := range child {
+				ret[k2] = v2
+			}
+		default:
+			continue
+		}
+	}
+	return ret
+}

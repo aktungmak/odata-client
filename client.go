@@ -36,13 +36,12 @@ func NewClient(host, uname, pass string) (*Client, error) {
 }
 
 // make a request with authentication, return raw http.Response
-func (c *Client) DoRaw(meth, ep string) (*http.Response, error) {
+func (c *Client) DoRaw(meth, uri string) (*http.Response, error) {
 	tr := &http.Transport{}
 	if TRUST_BAD_CERT {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	client := &http.Client{Transport: tr}
-	uri := "https://" + c.Host + ep
 
 	req, err := http.NewRequest(meth, uri, nil)
 	var retries int = 2
@@ -55,26 +54,28 @@ func (c *Client) DoRaw(meth, ep string) (*http.Response, error) {
 			return nil, err
 		} else if res.StatusCode == 401 {
 			//print("token was stale, getting a new one\n")
-            c.Token, err = GetToken(c.Host, c.Username, c.Password)
+			c.Token, err = GetToken(c.Host, c.Username, c.Password)
 			if err != nil {
 				return nil, err
 			}
 
 		} else {
-            break
-        }
+			break
+		}
 		retries -= 1
 	}
-    return res, nil
+	return res, nil
 
 }
 
 // perform a get request with authentication
 func (c *Client) Get(ep string) ([]byte, error) {
-    res, err := c.DoRaw("GET", ep)
-    if err != nil {
-        return []byte{}, err
-    }
+	uri := "https://" + c.Host + ep
+
+	res, err := c.DoRaw("GET", uri)
+	if err != nil {
+		return []byte{}, err
+	}
 	defer res.Body.Close()
 	data, err := ioutil.ReadAll(res.Body)
 	return data, err
