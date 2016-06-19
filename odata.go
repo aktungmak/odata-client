@@ -2,6 +2,8 @@ package ccm
 
 import (
 	"encoding/json"
+	"net/url"
+	"strconv"
 )
 
 type AlarmCollection struct {
@@ -66,18 +68,32 @@ func NewSystem(data []byte) (*System, error) {
 
 // given a map of the links section, recursively extract
 // each layer and return a map of the name and the link
-func ParseLinks(data map[string]interface{}, pname string) map[string]string {
-	ret := make(map[string]string)
+func ParseLinks(data map[string]interface{}, pname string) map[string]*url.URL {
+	ret := make(map[string]*url.URL)
 	for k, v := range data {
 		switch w := v.(type) {
 		case string:
 			if k == "@odata.id" {
-				ret[pname] = w
+				u, err := url.Parse(w)
+				if err != nil {
+                    continue
+				}
+                ret[pname] = u
 			}
 		case map[string]interface{}:
 			child := ParseLinks(w, pname+"."+k)
 			for k2, v2 := range child {
 				ret[k2] = v2
+			}
+		case []interface{}:
+			for i, el := range w {
+				if ms, ok := el.(map[string]interface{}); ok {
+					name := pname + "." + k + "." + strconv.Itoa(i)
+					child := ParseLinks(ms, name)
+					for k2, v2 := range child {
+						ret[k2] = v2
+					}
+				}
 			}
 		default:
 			continue
