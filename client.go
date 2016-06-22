@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+    "bytes"
 )
 
 const (
@@ -36,14 +37,14 @@ func NewClient(host, uname, pass string) (*Client, error) {
 }
 
 // make a request with authentication, return raw http.Response
-func (c *Client) DoRaw(meth, uri string) (*http.Response, error) {
+func (c *Client) DoRaw(meth, uri string, body []byte) (*http.Response, error) {
 	tr := &http.Transport{}
 	if TRUST_BAD_CERT {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	client := &http.Client{Transport: tr}
 
-	req, err := http.NewRequest(meth, uri, nil)
+	req, err := http.NewRequest(meth, uri, bytes.NewReader(body))
 	var retries int = 2
 	var res *http.Response
 	for retries > 0 {
@@ -72,7 +73,7 @@ func (c *Client) DoRaw(meth, uri string) (*http.Response, error) {
 func (c *Client) Get(ep string) ([]byte, error) {
 	uri := "https://" + c.Host + ep
 
-	res, err := c.DoRaw("GET", uri)
+	res, err := c.DoRaw("GET", uri, nil)
 	if err != nil {
 		return []byte{}, err
 	}
