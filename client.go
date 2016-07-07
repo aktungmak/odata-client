@@ -1,6 +1,6 @@
 // this package provides utilities for interacting with
-// ccm in a variety of different ways.
-package ccm
+// odata in a variety of different ways.
+package odata
 
 import (
 	"crypto/tls"

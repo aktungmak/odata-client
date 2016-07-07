@@ -1,4 +1,4 @@
-package ccm
+package odata
 
 import (
 	"encoding/json"
@@ -32,7 +32,6 @@ type SystemCollection struct {
 }
 
 type System struct {
-	//ManagementState   string `json:"Oem>Ericsson>ManagementState"`
 	Id           string
 	Name         string
 	Manufacturer string

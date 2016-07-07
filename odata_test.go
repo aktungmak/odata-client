@@ -1,4 +1,4 @@
-package ccm
+package odata
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ var sampleAlarm string = `
     "Id" : "2",
     "ResourceId" : "1b51ce2d-49ab-e311-91f0-b8c75753f1d1",
     "AlarmId" : 2,
-    "ProducerId" : "HDS 8000",
+    "ProducerId" : "sys 8000",
     "AlarmRaisedTime" : "2016-05-26T18:41:42.137Z",
     "AdditionalInformation" : " [ MetricName : cpu.user ]  [ MetricType : cpu ] ",
     "AlarmType" : "other (1)",
@@ -40,7 +40,7 @@ var sampleAlarm string = `
     "Id" : "1",
     "ResourceId" : "5d7b6507-59cc-4d89-986a-a397aeb47edc",
     "AlarmId" : 1,
-    "ProducerId" : "HDS 8000",
+    "ProducerId" : "sys 8000",
     "AlarmRaisedTime" : "2016-05-17T18:38:25.366Z",
     "Severity" : "Warning"
   } ],
@@ -79,11 +79,11 @@ var SampleSystemCollection = `{
 }`
 
 var SampleSystem = `{
-  "@odata.context" : "/rest/v0/$metadata#HdsComputerSystem.0.11.0",
+  "@odata.context" : "/rest/v0/$metadata#sysComputerSystem.0.11.0",
   "@odata.id" : "/rest/v0/Systems/1b51ce2d-49ab-e311-91f0-3b77ff4a51df",
-  "@odata.type" : "#HdsComputerSystem.0.11.0.HdsComputerSystem",
+  "@odata.type" : "#sysComputerSystem.0.11.0.sysComputerSystem",
   "Oem" : {
-    "Ericsson" : {
+    "acme" : {
       "ManagementState" : "ManagedFree",
       "MetricsEnabled" : true,
       "BootSourceOverrideTargetAllowableValues" : [ "Pxe", "Hdd" ]
@@ -115,9 +115,9 @@ var SampleSystem = `{
     "TotalSystemMemoryGiB" : 16
   },
   "Actions" : {
-    "http://www.ericsson.com/hds8000#HdsComputerSystem.ConnectRemoteConsole" : {
-      "title" : "HdsComputerSystem.ConnectRemoteConsole",
-      "target" : "/rest/v0/Systems/1b51ce2d-49ab-e311-91f0-3b77ff4a51df/Actions/HdsComputerSystem.ConnectRemoteConsole"
+    "http://www.acme.com/sys8000#sysComputerSystem.ConnectRemoteConsole" : {
+      "title" : "sysComputerSystem.ConnectRemoteConsole",
+      "target" : "/rest/v0/Systems/1b51ce2d-49ab-e311-91f0-3b77ff4a51df/Actions/sysComputerSystem.ConnectRemoteConsole"
     },
     "#ComputerSystem.Reset" : {
       "target" : "/rest/v0/Systems/1b51ce2d-49ab-e311-91f0-3b77ff4a51df/Actions/ComputerSystem.Reset",
@@ -133,7 +133,7 @@ var sampleLinks = `
     },
     "wrong": 2,
     "Oem" : {
-      "Ericsson" : {
+      "acme" : {
         "AlarmServices" : {
           "@odata.id" : "/rest/v0/AlarmServices"
         },
@@ -218,7 +218,7 @@ func TestAlarmCollection(t *testing.T) {
 		a.Id != "1" ||
 		a.ResourceId != "5d7b6507-59cc-4d89-986a-a397aeb47edc" ||
 		a.AlarmId != 1 ||
-		a.ProducerId != "HDS 8000" ||
+		a.ProducerId != "sys 8000" ||
 		a.AlarmRaisedTime != "2016-05-17T18:38:25.366Z" ||
 		a.Severity != "Warning" {
 		t.Error("Values of Alarm incorrect")
@@ -272,7 +272,7 @@ func TestParseLinks(t *testing.T) {
 		t.Error("incorrect number of links found")
 
 		if res[".Managers"] != "/rest/v0/Managers" ||
-			res[".Oem.Ericsson.Cables"] != "/rest/v0/Cables" ||
+			res[".Oem.acme.Cables"] != "/rest/v0/Cables" ||
 			res[".Tasks"] != "/rest/v0/TaskService" {
 			t.Error("values of links incorrect")
 		}
