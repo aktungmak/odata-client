@@ -3,11 +3,8 @@
 package odata
 
 import (
-	"crypto/tls"
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
-    "bytes"
 )
 
 const (
@@ -18,74 +15,30 @@ const (
 )
 
 // a basic client for API interactions. handles token management
-type Client struct {
-	Host     string
-	Username string
-	Password string
-	Token    string
-}
-
-func NewClient(host, uname, pass string) (*Client, error) {
-	c := &Client{host, uname, pass, ""}
-	var err error
-	c.Token, err = GetToken(host, uname, pass)
-	if err != nil {
-		return c, err
-	} else {
-		return c, nil
-	}
-}
-
-// make a request with authentication, return raw http.Response
-func (c *Client) DoRaw(meth, uri string, body []byte) (*http.Response, error) {
-	tr := &http.Transport{}
-	if TRUST_BAD_CERT {
-		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
-	client := &http.Client{Transport: tr}
-
-	req, err := http.NewRequest(meth, uri, bytes.NewReader(body))
-	var retries int = 2
-	var res *http.Response
-	for retries > 0 {
-		req.Header.Set("Authorization", "Bearer "+c.Token)
-
-		res, err = client.Do(req)
-		if err != nil {
-			return nil, err
-		} else if res.StatusCode == 401 {
-			//print("token was stale, getting a new one\n")
-			c.Token, err = GetToken(c.Host, c.Username, c.Password)
-			if err != nil {
-				return nil, err
-			}
-
-		} else {
-			break
-		}
-		retries -= 1
-	}
-	return res, nil
-
+type Client interface {
+	DoRaw(string, string, []byte) (*http.Response, error)
 }
 
 // perform a get request with authentication
-func (c *Client) Get(ep string) ([]byte, error) {
-	uri := "https://" + c.Host + ep
+func Get(c Client, host, ep string) ([]byte, error) {
+	uri := "https://" + host + ep
 
 	res, err := c.DoRaw("GET", uri, nil)
 	if err != nil {
 		return []byte{}, err
 	}
 	defer res.Body.Close()
-	data, err := ioutil.ReadAll(res.Body)
-	return data, err
 
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return []byte{}, err
+	}
+	return data, err
 }
 
 // convenience method to grab the current alarms
-func (c *Client) GetAlarms() (*AlarmCollection, error) {
-	data, err := c.Get(EP_ALARMCOLLECTION)
+func GetAlarms(c Client, host string) (*AlarmCollection, error) {
+	data, err := Get(c, host, EP_ALARMCOLLECTION)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +46,8 @@ func (c *Client) GetAlarms() (*AlarmCollection, error) {
 }
 
 // convenience method to grab all systems
-func (c *Client) GetSystems() (*SystemCollection, error) {
-	data, err := c.Get(EP_SYSTEMCOLLECTION)
+func GetSystems(c Client, host string) (*SystemCollection, error) {
+	data, err := Get(c, host, EP_SYSTEMCOLLECTION)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +55,7 @@ func (c *Client) GetSystems() (*SystemCollection, error) {
 
 	// need to actually populate the Members field
 	for _, mem := range sc.Links.Members {
-		data, err := c.Get(mem.Id)
+		data, err := Get(c, host, mem.Id)
 		s, err := NewSystem(data)
 		if err != nil {
 			continue
@@ -111,34 +64,4 @@ func (c *Client) GetSystems() (*SystemCollection, error) {
 		}
 	}
 	return sc, err
-}
-
-// get a bearer token for the specified user:pass
-func GetToken(host, uname, pass string) (string, error) {
-	tr := &http.Transport{}
-	if TRUST_BAD_CERT {
-		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
-	client := &http.Client{Transport: tr}
-	uri := "https://" + host + EP_TOKENSERVICE
-
-	req, err := http.NewRequest("GET", uri, nil)
-	req.SetBasicAuth(uname, pass)
-
-	res, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
-
-	decoder := json.NewDecoder(res.Body)
-	data := struct {
-		AccessToken string `json:"access_token"`
-	}{}
-	err = decoder.Decode(&data)
-	if err != nil {
-		return "", err
-	} else {
-		return data.AccessToken, nil
-	}
 }
