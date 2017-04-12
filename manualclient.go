@@ -14,13 +14,12 @@ const (
 // this implements the odata.Client interface
 // but uses a user-provided token for auth
 type ManualClient struct {
-	Host   string
 	Token  string
 	client *http.Client
 }
 
-func NewManualClient(host, token string, acceptBadCert bool) (*ManualClient, error) {
-	c := &ManualClient{Host: host, Token: token}
+func NewManualClient(token string, acceptBadCert bool) (*ManualClient, error) {
+	c := &ManualClient{Token: token}
 
 	tr := &http.Transport{}
 	if acceptBadCert {
