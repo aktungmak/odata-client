@@ -42,6 +42,7 @@ func NewTokenClient(host, uname, pass string, acceptBadCert bool) (*TokenClient,
 func (c *TokenClient) DoRaw(meth, uri string, body []byte) (*http.Response, error) {
 	req, err := http.NewRequest(meth, uri, bytes.NewReader(body))
 	var res *http.Response
+
 	for i := 0; i < AUTH_RETRIES; i++ {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
 		res, err = c.client.Do(req)

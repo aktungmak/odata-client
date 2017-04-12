@@ -27,11 +27,14 @@ func NewBaClient(uname, pass string, acceptBadCert bool) *BaClient {
 
 func (c *BaClient) DoRaw(meth, uri string, body []byte) (*http.Response, error) {
 	req, err := http.NewRequest(meth, uri, bytes.NewReader(body))
-	var res *http.Response
 	req.SetBasicAuth(c.Username, c.Password)
+
+	var res *http.Response
 	res, err = c.client.Do(req)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return res, nil
 }
