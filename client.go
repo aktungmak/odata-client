@@ -17,6 +17,8 @@ const (
 // a basic client for API interactions. handles token management
 type Client interface {
 	DoRaw(string, string, []byte) (*http.Response, error)
+	Insecure() bool
+	Token() string
 }
 
 // perform a get request with authentication

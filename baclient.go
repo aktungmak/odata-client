@@ -11,12 +11,14 @@ import (
 type BaClient struct {
 	Username string
 	Password string
+	insecure bool
 	client   *http.Client
 }
 
 func NewBaClient(uname, pass string, acceptBadCert bool) *BaClient {
 	c := &BaClient{Username: uname, Password: pass}
 
+	c.insecure = acceptBadCert
 	tr := &http.Transport{}
 	if acceptBadCert {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -25,7 +27,7 @@ func NewBaClient(uname, pass string, acceptBadCert bool) *BaClient {
 	return c
 }
 
-func (c *BaClient) DoRaw(meth, uri string, body []byte) (*http.Response, error) {
+func (c BaClient) DoRaw(meth, uri string, body []byte) (*http.Response, error) {
 	req, err := http.NewRequest(meth, uri, bytes.NewReader(body))
 	req.SetBasicAuth(c.Username, c.Password)
 
@@ -37,4 +39,12 @@ func (c *BaClient) DoRaw(meth, uri string, body []byte) (*http.Response, error) 
 	}
 
 	return res, nil
+}
+
+func (c BaClient) Insecure() bool {
+	return c.insecure
+}
+
+func (c BaClient) Token() string {
+	return c.Username + ":" + c.Password
 }
